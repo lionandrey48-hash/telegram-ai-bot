@@ -1,59 +1,70 @@
 import asyncio
 import logging
+import sys
+import os
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiohttp import web
 
 # --- ВСТАВЬ СЮДА ТОКЕН ---
 TOKEN = "8490053226:AAGd5t4HAHYcdsCwmjqBQknYxqOEbDf-1sA"
 
 dp = Dispatcher()
+bot = Bot(token=TOKEN)
 
-# 1. Главное меню (Кнопки внизу)
+# --- БЛОК БОТА (Кнопки и логика) ---
+
 main_kb = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="🎲 Бросить кубик"), KeyboardButton(text="📸 Хочу фото")],
     [KeyboardButton(text="🔗 Полезные ссылки")]
 ], resize_keyboard=True)
 
-# 2. Инлайн-меню (Кнопки под сообщением)
 links_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="📺 YouTube", url="https://youtube.com")],
     [InlineKeyboardButton(text="🔎 Google", url="https://google.com")]
 ])
 
-# Команда /start
 @dp.message(CommandStart())
 async def start(message: Message):
-    await message.answer("Привет! Я обновился. Зацени меню 👇", reply_markup=main_kb)
+    await message.answer("Я онлайн 24/7! 😎", reply_markup=main_kb)
 
-# Бросок кубика
 @dp.message(F.text == "🎲 Бросить кубик")
 async def dice(message: Message):
     await message.answer_dice(emoji="🎰")
 
-# Отправка ссылок (Инлайн)
 @dp.message(F.text == "🔗 Полезные ссылки")
 async def links(message: Message):
-    await message.answer("Вот тебе пару кнопок-ссылок:", reply_markup=links_kb)
+    await message.answer("Лови ссылки:", reply_markup=links_kb)
 
-# Реакция на фото (Эхо)
-# Если нажали "Хочу фото"
 @dp.message(F.text == "📸 Хочу фото")
 async def send_photo(message: Message):
-    # Ссылка на картинку (можешь заменить на свою)
-    photo_url = "https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg"
-    await message.answer_photo(photo=photo_url, caption="Держи красивое фото! 🌳")
-@dp.message(F.photo)
-async def photo_handler(message: Message):
-    await message.answer("Ого, крутая фотка! 👍")
+    await message.answer_photo(photo="https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg", caption="Держи фото!")
 
-# Запуск
+# --- БЛОК "ОБМАНКИ" (Веб-сервер для Render) ---
+
+async def handle(request):
+    return web.Response(text="Бот работает!")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get('/', handle)
+    # Render выдает порт через переменную окружения PORT. Если её нет - берем 8080
+    port = int(os.environ.get("PORT", 8080))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+
 async def main():
-    bot = Bot(token=TOKEN)
-    await dp.start_polling(bot)
+    # Запускаем и веб-сервер (чтобы не убили), и бота
+    await asyncio.gather(
+        start_web_server(),
+        dp.start_polling(bot)
+    )
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
