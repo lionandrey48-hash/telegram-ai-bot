@@ -7,13 +7,10 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiohttp import web
 
-# --- ВСТАВЬ СЮДА ТОКЕН ---
-TOKEN = "8490053226:AAGd5t4HAHYcdsCwmjqBQknYxqOEbDf-1sA"
+TOKEN = os.getenv("TOKEN")
 
 dp = Dispatcher()
 bot = Bot(token=TOKEN)
-
-# --- БЛОК БОТА (Кнопки и логика) ---
 
 main_kb = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="🎲 Бросить кубик"), KeyboardButton(text="📸 Хочу фото")],
@@ -41,7 +38,21 @@ async def links(message: Message):
 async def send_photo(message: Message):
     await message.answer_photo(photo="https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg", caption="Держи фото!")
 
-# --- БЛОК "ОБМАНКИ" (Веб-сервер для Render) ---
+def search_knowledge(question):
+    with open('knowledge_base.txt', 'r', encoding='utf-8') as f:
+        content = f.read()
+    blocks = content.strip().split('\n\n')
+    question_lower = question.lower()
+    for block in blocks:
+        if any(word in block.lower() for word in question_lower.split()):
+            if 'Ответ:' in block:
+                return block.split('Ответ:')[1].strip()
+    return "Извините, не нашёл ответ. Попробуйте переформулировать."
+
+@dp.message()
+async def handle_question(message: Message):
+    answer = search_knowledge(message.text)
+    await message.answer(answer)
 
 async def handle(request):
     return web.Response(text="Бот работает!")
@@ -49,19 +60,14 @@ async def handle(request):
 async def start_web_server():
     app = web.Application()
     app.router.add_get('/', handle)
-    # Render выдает порт через переменную окружения PORT. Если её нет - берем 8080
     port = int(os.environ.get("PORT", 8080))
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', port)
+    site = web.TCPSite(runner, '[jg:ip_address_77]', port)
     await site.start()
 
 async def main():
-    # Запускаем и веб-сервер (чтобы не убили), и бота
-    await asyncio.gather(
-        start_web_server(),
-        dp.start_polling(bot)
-    )
+    await asyncio.gather(start_web_server(), dp.start_polling(bot))
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
