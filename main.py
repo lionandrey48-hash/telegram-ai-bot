@@ -63,7 +63,7 @@ async def start_web_server():
     port = int(os.environ.get("PORT", 8080))
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, '[jg:ip_address_77]', port)
+    site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
 
 async def main():
