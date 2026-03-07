@@ -26,7 +26,7 @@ links_kb = InlineKeyboardMarkup(inline_keyboard=[
 async def start(message: Message):
     await message.answer("Я онлайн 24/7! 😎", reply_markup=main_kb)
 
-@dp.message(F.text == "🎲 Бросить кубик")
+@dp.message(F.text == "Юрист")
 async def dice(message: Message):
     await message.answer_dice(emoji="🎰")
 
