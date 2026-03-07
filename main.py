@@ -13,7 +13,7 @@ dp = Dispatcher()
 bot = Bot(token=TOKEN)
 
 main_kb = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="🎲 Бросить кубик"), KeyboardButton(text="📸 Хочу фото")],
+    [KeyboardButton(text="Юрист"), KeyboardButton(text="📸 Хочу фото")],
     [KeyboardButton(text="🔗 Полезные ссылки")]
 ], resize_keyboard=True)
 
